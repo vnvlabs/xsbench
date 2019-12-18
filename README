@@ -1,0 +1,19 @@
+
+
+
+This is a "fork" of XSBench
+
+"Fork" is in quotes because "fork" is a github idea, and not a core git functionality
+
+After cloning this library, run the command
+
+  git remote add upstream http://https://github.com/ANL-CESAR/XSBench.git
+
+
+This will add the main library as an additional remote for the project. Changes from 
+the core project can then be merged into this fork using the command
+
+  git pull upstream master
+
+
+
