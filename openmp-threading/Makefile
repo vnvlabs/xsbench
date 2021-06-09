@@ -1,4 +1,4 @@
-#===============================================================================
+#==I=============================================================================
 # User Options
 #===============================================================================
 
@@ -12,6 +12,10 @@ DEBUG       = no
 PROFILE     = no
 MPI         = no
 
+#=================
+VNV_DIR ?=/usr/local/vnv/
+
+
 #===============================================================================
 # Program name & source code list
 #===============================================================================
@@ -24,7 +28,8 @@ io.c \
 Simulation.c \
 GridInit.c \
 XSutils.c \
-Materials.c
+Materials.c \
+Registration_XSBENCH.c 
 
 obj = $(source:.c=.o)
 
@@ -38,10 +43,10 @@ CC    = gcc
 endif
 
 # Standard Flags
-CFLAGS := -std=gnu99 -Wall
+CFLAGS := -std=gnu99 -Wall -I${VNV_DIR}/include 
 
 # Linker Flags
-LDFLAGS = -lm
+LDFLAGS = -lm -L${VNV_DIR}/lib -linjection -Wl,-rpath=${VNV_DIR}/lib
 
 # Regular gcc Compiler
 ifneq (,$(findstring gcc,$(CC)))
@@ -100,6 +105,11 @@ $(program): $(obj) XSbench_header.h Makefile
 %.o: %.c XSbench_header.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
+vnv:
+	bear  make XSBench
+	$(VNV_DIR)/bin/vnv-matcher --package XSBENCH --output Registration --extension c compile_commands.json
+
+
 clean:
 	rm -rf $(program) $(obj)
 
@@ -107,4 +117,4 @@ edit:
 	vim -p $(source) XSbench_header.h
 
 run:
-	./$(program)
+	./$(program) 

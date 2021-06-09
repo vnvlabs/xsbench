@@ -1,8 +1,17 @@
 #include "XSbench_header.h"
 
+
+#include "VnV.h"
+
 #ifdef MPI
 #include<mpi.h>
+INJECTION_EXECUTABLE(XSBENCH,VnV,mpi)
+#else
+INJECTION_EXECUTABLE(XSBENCH,VnV,serial)
 #endif
+
+static const char* schemaCallback = "{\"type\": \"object\", \"required\":[]}";
+INJECTION_OPTIONS(XSBENCH,schemaCallback){}
 
 int main( int argc, char* argv[] )
 {
@@ -21,6 +30,8 @@ int main( int argc, char* argv[] )
 	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
 	#endif
 
+ 	INJECTION_INITIALIZE(XSBENCH, &argc, &argv, "./sample.json");
+	
 	// Process CLI Fields -- store in "Inputs" structure
 	Inputs in = read_CLI( argc, argv );
 
@@ -106,6 +117,8 @@ int main( int argc, char* argv[] )
 
 	// Print / Save Results and Exit
 	int is_invalid_result = print_results( in, mype, omp_end-omp_start, nprocs, verification );
+
+	INJECTION_FINALIZE(XSBENCH)
 
 	#ifdef MPI
 	MPI_Finalize();
