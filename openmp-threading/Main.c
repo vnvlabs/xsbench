@@ -3,12 +3,7 @@
 
 #include "VnV.h"
 
-#ifdef MPI
-#include<mpi.h>
-INJECTION_EXECUTABLE(XSBENCH,VnV,mpi)
-#else
-INJECTION_EXECUTABLE(XSBENCH,VnV,serial)
-#endif
+INJECTION_EXECUTABLE(XSBENCH)
 
 static const char* schemaCallback = "{\"type\": \"object\", \"required\":[]}";
 INJECTION_OPTIONS(XSBENCH,schemaCallback){}
