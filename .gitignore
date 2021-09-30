@@ -1,0 +1,6 @@
+*.o
+vnv.__cache__
+compile_commands.json
+XSBench
+vv-output
+
