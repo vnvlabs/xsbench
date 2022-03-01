@@ -1,4 +1,4 @@
-///XSBENCH:1857129687166835792
+///XSBENCH:5373228000185351139
 /// This file was automatically generated using the VnV-Matcher executable. 
 /// The matcher allows for automatic registration of all VnV plugins and injection 
 /// points. Building the matcher requires Clang. If Clang is not available on this machine,
@@ -8,11 +8,6 @@
 //PACKAGENAME: XSBENCH
 
 #include "VnV.h" 
-#include "version/version.h"
-
-
-VNVVERSIONINFOCALLBACK(XSBENCH)
-
 DECLAREOPTIONS(XSBENCH)
 const char* getFullRegistrationJson_XSBENCH(){
 	 return "{\"Conclusion\":\"\",\"Introduction\":\"\",\"Options\":\"\"}";}
@@ -20,7 +15,9 @@ const char* getFullRegistrationJson_XSBENCH(){
 INJECTION_REGISTRATION(XSBENCH){
 	REGISTEROPTIONS(XSBENCH)
 	REGISTER_FULL_JSON(XSBENCH, getFullRegistrationJson_XSBENCH);
-};
+}
 
 
+
+FORTRAN_INJECTION_REGISTRATION(XSBENCH)
 
