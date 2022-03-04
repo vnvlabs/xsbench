@@ -15,7 +15,6 @@ MPI         = no
 #=================
 VNV_DIR ?=/usr/local/vnv/
 
-
 #===============================================================================
 # Program name & source code list
 #===============================================================================
@@ -106,9 +105,8 @@ $(program): $(obj) XSbench_header.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 vnv:
-	bear  make XSBench
-	$(VNV_DIR)/bin/vnv-matcher --package XSBENCH --output Registration --extension c compile_commands.json
-
+	bear make
+	$(VNV_DIR)/bin/vnv-matcher --package XSBENCH --output Registration_XSBENCH.c --cache vnv.__cache__ compile_commands.json
 
 clean:
 	rm -rf $(program) $(obj)
