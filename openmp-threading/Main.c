@@ -1,5 +1,8 @@
 #include "XSbench_header.h"
 
+#ifdef MPI
+#include <mpi.h>
+#endif
 
 #include "VnV.h"
 
