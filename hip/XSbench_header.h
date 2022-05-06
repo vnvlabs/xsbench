@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #ifndef __XSBENCH_HEADER_H__
 #define __XSBENCH_HEADER_H__
 
@@ -5,8 +6,7 @@
 #include<stdlib.h>
 #include<math.h>
 #include<assert.h>
-#include<cuda.h>
-#include <thrust/reduce.h>
+#include<hip/hip_runtime.h>
 #include<stdint.h>
 #include <chrono> 
 
@@ -28,11 +28,11 @@
 #define STARTING_SEED 1070
 
 #define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
-inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+inline void gpuAssert(hipError_t code, const char *file, int line, bool abort=true)
 {
-	if (code != cudaSuccess) 
+	if (code != hipSuccess) 
 	{
-		fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		fprintf(stderr,"GPUassert: %s %s %d\n", hipGetErrorString(code), file, line);
 		if (abort) exit(code);
 	}
 }
@@ -116,6 +116,7 @@ __device__ int pick_mat( uint64_t * seed );
 __host__ __device__ double LCG_random_double(uint64_t * seed);
 __device__ uint64_t fast_forward_LCG(uint64_t seed, uint64_t n);
 
+/*
 unsigned long long run_event_based_simulation_optimization_1(Inputs in, SimulationData GSD, int mype);
 __global__ void sampling_kernel(Inputs in, SimulationData GSD );
 __global__ void xs_lookup_kernel_optimization_1(Inputs in, SimulationData GSD );
@@ -133,6 +134,7 @@ unsigned long long run_event_based_simulation_optimization_5(Inputs in, Simulati
 __global__ void xs_lookup_kernel_optimization_5(Inputs in, SimulationData GSD, int n_lookups, int offset );
 
 unsigned long long run_event_based_simulation_optimization_6(Inputs in, SimulationData GSD, int mype);
+*/
 
 // GridInit.cu
 SimulationData grid_init_do_not_profile( Inputs in, int mype );

@@ -7,7 +7,7 @@
 #include<string.h>
 #include<strings.h>
 #include<math.h>
-#include<omp.h>
+//#include<omp.h>
 #include<unistd.h>
 #include<sys/time.h>
 #include<assert.h>
@@ -16,6 +16,8 @@
 #define CL_TARGET_OPENCL_VERSION 200
 #include <CL/cl.h>
 #define MAX_SOURCE_SIZE (0x100000)
+
+#include "CLutils.h"
 
 // Papi Header
 #ifdef PAPI
@@ -66,6 +68,8 @@ typedef struct{
 	int simulation_method;
 	int binary_mode;
 	int kernel_id;
+  int platform_id;
+  int device_id;
 } Inputs;
 
 typedef struct{
@@ -79,7 +83,7 @@ typedef struct{
 	int length_concs;
 	int length_mats;
 	int length_unionized_energy_array;
-	int length_index_grid;
+	long length_index_grid;
 	int length_nuclide_grid;
 	int max_num_nucs;
 	double * p_energy_samples;

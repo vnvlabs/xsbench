@@ -20,6 +20,8 @@ typedef struct{
 	int simulation_method;
 	int binary_mode;
 	int kernel_id;
+  int platform_id;
+  int device_id;
 } Inputs;
 
 // Grid types
@@ -37,9 +39,9 @@ typedef struct{
 unsigned long fast_forward_LCG(unsigned long seed, unsigned long n)
 {
 	// LCG parameters
-	const unsigned long m = 9223372036854775808ULL; // 2^63
-	unsigned long a = 2806196910506780709ULL;
-	unsigned long c = 1ULL;
+	const unsigned long m = 9223372036854775808UL; // 2^63
+	unsigned long a = 2806196910506780709UL;
+	unsigned long c = 1UL;
 
 	n = n % m;
 
@@ -66,9 +68,9 @@ unsigned long fast_forward_LCG(unsigned long seed, unsigned long n)
 double LCG_random_double(unsigned long * seed)
 {
 	// LCG parameters
-	const unsigned long m = 9223372036854775808ULL; // 2^63
-	const unsigned long a = 2806196910506780709ULL;
-	const unsigned long c = 1ULL;
+	const unsigned long m = 9223372036854775808UL; // 2^63
+	const unsigned long a = 2806196910506780709UL;
+	const unsigned long c = 1UL;
 	*seed = (a * (*seed) + c) % m;
 	return (double) (*seed) / (double) m;
 }	
@@ -309,6 +311,9 @@ __kernel void macro_xs_lookup_kernel(		Inputs in,
 {
 	// Get the index of the current element to be processed
 	int i = get_global_id(0);
+  
+  if( i >= in.lookups )
+    return;
 		
 	// Set the initial seed value
 	unsigned long seed = STARTING_SEED;	
@@ -358,6 +363,6 @@ __kernel void macro_xs_lookup_kernel(		Inputs in,
 			max_idx = j;
 		}
 	}
-	verification_array[i] += max_idx+1;
+	verification_array[i] = max_idx+1;
 
 }
