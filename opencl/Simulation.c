@@ -13,9 +13,6 @@
 
 unsigned long long run_event_based_simulation(Inputs in, SimulationData SD, int mype, double * sim_runtime)
 {
-	if( mype == 0)	
-		printf("Initializing OpenCL data structures and JIT compiling kernel...\n");
-
 	double start = get_time();
 
 	int * verification_array_host = (int *) malloc( in.lookups * sizeof(int));
@@ -39,28 +36,10 @@ unsigned long long run_event_based_simulation(Inputs in, SimulationData SD, int 
 	source_size = fread( source_str, 1, MAX_SOURCE_SIZE, fp);
 	fclose( fp );
 
-	// Get platform and device information
-	cl_platform_id platform_id = NULL;
-	cl_device_id device_id = NULL;   
-	cl_uint ret_num_devices;
-	cl_uint ret_num_platforms;
-	cl_int ret = clGetPlatformIDs(1, &platform_id, &ret_num_platforms);
-	check(ret);
-	ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &ret_num_devices);
-	//ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_CPU, 1, &device_id, &ret_num_devices);
-	//ret = clGetDeviceIDs( platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, &ret_num_devices);
-	check(ret);
-
-	// Print info about where we are running
-	print_single_info(platform_id, device_id);
-
-	// Create an OpenCL context
-	cl_context context = clCreateContext( NULL, 1, &device_id, NULL, NULL, &ret);
-	check(ret);
-
-	// Create a command queue
-	cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device_id, 0, &ret);
-	check(ret);
+  OpenCLInfo CL = initialize_device(in.platform_id, in.device_id);
+	cl_device_id device_id = CL.device_id;
+	cl_context context = CL.context;
+	cl_command_queue command_queue = CL.command_queue;
 
 	////////////////////////////////////////////////////////////////////////////////
 	// OpenCL Move Memory To Device Buffers
@@ -87,6 +66,7 @@ unsigned long long run_event_based_simulation(Inputs in, SimulationData SD, int 
 	
 	// Create memory buffers on the device for each vector and move data over
 	size_t sz = SD.length_num_nucs * sizeof(int);
+  cl_int ret;
 	cl_mem num_nucs_d = clCreateBuffer(context, CL_MEM_READ_ONLY,  sz, NULL, &ret);
 	check(ret);
 	ret = clEnqueueWriteBuffer(command_queue, num_nucs_d, CL_TRUE, 0, sz, SD.num_nucs, 0, NULL, NULL);
@@ -213,11 +193,23 @@ unsigned long long run_event_based_simulation(Inputs in, SimulationData SD, int 
 	// Run Simulation Kernel
 	////////////////////////////////////////////////////////////////////////////////
 	
+  if( mype == 0 )
+	{
+		border_print();
+		center_print("SIMULATION", 79);
+		border_print();
+	}
+	
 	if( mype == 0) printf("Running event based simulation...\n");
 
 	// Execute the OpenCL kernel on the list
+	size_t local_item_size = 256; // Divide work items into groups
 	size_t global_item_size = in.lookups; // Process the entire lists
-	size_t local_item_size = 64; // Divide work items into groups of 64
+
+  // Add extra work items if global size not evenly divisible by local size
+  if( in.lookups % local_item_size != 0 && in.lookups > local_item_size )
+    global_item_size = ((in.lookups / local_item_size) + 1) * local_item_size;
+
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
 	check(ret);
 	
@@ -229,6 +221,8 @@ unsigned long long run_event_based_simulation(Inputs in, SimulationData SD, int 
 	ret = clEnqueueReadBuffer(command_queue, verification_array, CL_TRUE, 0, in.lookups * sizeof(int), verification_array_host, 0, NULL, NULL);
 	check(ret);
 	
+  stop = get_time();
+	
 	if( mype == 0) printf("Reducing verification value...\n");
 	
 	unsigned long long verification = 0;
@@ -236,7 +230,6 @@ unsigned long long run_event_based_simulation(Inputs in, SimulationData SD, int 
 	for( int l = 0; l < in.lookups; l++ )
 		verification += verification_array_host[l];
 
-	stop = get_time();
 	*sim_runtime = stop-start;
 	if( mype == 0) printf("Simulation + Verification Reduction Runtime: %.3lf seconds\n", *sim_runtime);
 	
