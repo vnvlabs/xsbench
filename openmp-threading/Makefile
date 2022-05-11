@@ -11,6 +11,7 @@ OPENMP      = yes
 DEBUG       = no
 PROFILE     = no
 MPI         = no
+AML         = no
 
 #=================
 VNV_DIR ?=/usr/local/vnv/
@@ -91,6 +92,12 @@ endif
 ifeq ($(MPI),yes)
   CC = mpicc
   CFLAGS += -DMPI
+endif
+
+# AML
+ifeq ($(AML),yes)
+  LDFLAGS += $(shell pkg-config --libs aml)
+  CFLAGS += -DAML $(shell pkg-config --cflags aml)
 endif
 
 #===============================================================================

@@ -26,7 +26,7 @@ int main( int argc, char* argv[] )
 	// =====================================================================
 	// Initialization & Command Line Read-In
 	// =====================================================================
-	int version = 19;
+	int version = 20;
 	int mype = 0;
 	double omp_start, omp_end;
 	int nprocs = 1;
@@ -40,6 +40,10 @@ int main( int argc, char* argv[] )
 
  	INJECTION_INITIALIZE(XSBENCH, &argc, &argv, "./sample.json");
 	
+	#ifdef AML
+	aml_init(&argc, &argv);
+	#endif
+
 	// Process CLI Fields -- store in "Inputs" structure
 	Inputs in = read_CLI( argc, argv );
 
@@ -130,6 +134,10 @@ int main( int argc, char* argv[] )
 
 	#ifdef MPI
 	MPI_Finalize();
+	#endif
+
+	#ifdef AML
+	aml_finalize();
 	#endif
 
 	return is_invalid_result;

@@ -33,18 +33,16 @@ obj = $(source:.c=.o)
 CFLAGS := -std=gnu99 -Wall
 
 # Linker Flags
-LDFLAGS = -lm
+LDFLAGS = -lm -lOpenCL
 
 # Regular gcc Compiler
 ifeq ($(COMPILER),gnu)
   CC = gcc
-  CFLAGS += -lOpenCL
 endif
 
-# Intel Compiler
-ifeq ($(COMPILER),intel)
-  CC = 
-  CFLAGS += 
+# clang
+ifeq ($(COMPILER),clang)
+  CC = clang
 endif
 
 # Debug Flags
@@ -74,17 +72,17 @@ endif
 # Targets to Build
 #===============================================================================
 
-$(program): $(obj) XSbench_header.h Makefile
+$(program): $(obj) XSbench_header.h CLutils.h Makefile
 	$(CC) $(CFLAGS) $(obj) -o $@ $(LDFLAGS)
 
-%.o: %.c XSbench_header.h Makefile
+%.o: %.c XSbench_header.h CLutils.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -rf $(program) $(obj)
 
 edit:
-	vim -p $(source) kernel.cl XSbench_header.h
+	vim -p $(source) kernel.cl XSbench_header.h CLutils.h
 
 run:
 	./$(program)

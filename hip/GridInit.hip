@@ -1,5 +1,82 @@
 #include "XSbench_header.h"
 
+// Moves all required data structures to the GPU's memory space
+SimulationData move_simulation_data_to_device( Inputs in, int mype, SimulationData SD )
+{
+	if(mype == 0) printf("Allocating and moving simulation data to GPU memory space...\n");
+
+	////////////////////////////////////////////////////////////////////////////////
+	// SUMMARY: Simulation Data Structure Manifest for "SD" Object
+	// Here we list all heap arrays (and lengths) in SD that would need to be
+	// offloaded manually if using an accelerator with a seperate memory space
+	////////////////////////////////////////////////////////////////////////////////
+	// int * num_nucs;                     // Length = length_num_nucs;
+	// double * concs;                     // Length = length_concs
+	// int * mats;                         // Length = length_mats
+	// double * unionized_energy_array;    // Length = length_unionized_energy_array
+	// int * index_grid;                   // Length = length_index_grid
+	// NuclideGridPoint * nuclide_grid;    // Length = length_nuclide_grid
+	// 
+	// Note: "unionized_energy_array" and "index_grid" can be of zero length
+	//        depending on lookup method.
+	//
+	// Note: "Lengths" are given as the number of objects in the array, not the
+	//       number of bytes.
+	////////////////////////////////////////////////////////////////////////////////
+	size_t sz;
+	size_t total_sz = 0;
+
+	// Shallow copy of CPU simulation data to GPU simulation data
+	SimulationData GSD = SD;
+
+	// Move data to GPU memory space
+	sz = GSD.length_num_nucs * sizeof(int);
+	gpuErrchk( hipMalloc((void **) &GSD.num_nucs, sz) );
+	gpuErrchk( hipMemcpy(GSD.num_nucs, SD.num_nucs, sz, hipMemcpyHostToDevice) );
+	total_sz += sz;
+
+	sz = GSD.length_concs * sizeof(double);
+	gpuErrchk( hipMalloc((void **) &GSD.concs, sz) );
+	gpuErrchk( hipMemcpy(GSD.concs, SD.concs, sz, hipMemcpyHostToDevice) );
+	total_sz += sz;
+
+	sz = GSD.length_mats * sizeof(int);
+	gpuErrchk( hipMalloc((void **) &GSD.mats, sz) );
+	gpuErrchk( hipMemcpy(GSD.mats, SD.mats, sz, hipMemcpyHostToDevice) );
+	total_sz += sz;
+	
+	sz = GSD.length_unionized_energy_array * sizeof(double);
+	gpuErrchk( hipMalloc((void **) &GSD.unionized_energy_array, sz) );
+	gpuErrchk( hipMemcpy(GSD.unionized_energy_array, SD.unionized_energy_array, sz, hipMemcpyHostToDevice) );
+	total_sz += sz;
+
+	sz = GSD.length_index_grid * sizeof(int);
+	gpuErrchk( hipMalloc((void **) &GSD.index_grid, sz) );
+	gpuErrchk( hipMemcpy(GSD.index_grid, SD.index_grid, sz, hipMemcpyHostToDevice) );
+	total_sz += sz;
+
+	sz = GSD.length_nuclide_grid * sizeof(NuclideGridPoint);
+	gpuErrchk( hipMalloc((void **) &GSD.nuclide_grid, sz) );
+	gpuErrchk( hipMemcpy(GSD.nuclide_grid, SD.nuclide_grid, sz, hipMemcpyHostToDevice) );
+	total_sz += sz;
+	
+	// Allocate verification array on device. This structure is not needed on CPU, so we don't
+	// have to copy anything over.
+	sz = in.lookups * sizeof(unsigned long);
+	gpuErrchk( hipMalloc((void **) &GSD.verification, sz) );
+	total_sz += sz;
+	GSD.length_verification = in.lookups;
+	
+	// Synchronize
+	gpuErrchk( hipPeekAtLastError() );
+	gpuErrchk( hipDeviceSynchronize() );
+	
+	if(mype == 0 ) printf("GPU Intialization complete. Allocated %.0lf MB of data on GPU.\n", total_sz/1024.0/1024.0 );
+
+	return GSD;
+
+}
+
 SimulationData grid_init_do_not_profile( Inputs in, int mype )
 {
 	// Structure to hold all allocated simuluation data arrays
@@ -7,7 +84,7 @@ SimulationData grid_init_do_not_profile( Inputs in, int mype )
 
 	// Keep track of how much data we're allocating
 	size_t nbytes = 0;
-
+	
 	// Set the initial seed value
 	uint64_t seed = 42;	
 
@@ -134,7 +211,6 @@ SimulationData grid_init_do_not_profile( Inputs in, int mype )
 		double du = 1.0 / in.hash_bins;
 
 		// For each energy level in the hash table
-		#pragma omp parallel for
 		for( long e = 0; e < in.hash_bins; e++ )
 		{
 			double energy = e * du;
@@ -170,58 +246,7 @@ SimulationData grid_init_do_not_profile( Inputs in, int mype )
 	SD.concs = load_concs(SD.num_nucs, SD.max_num_nucs);
 	SD.length_concs = SD.length_mats;
 
-	// Allocate and initialize replicas
-#ifdef AML
-	// num_nucs
-	aml_replicaset_hwloc_create(&(SD.num_nucs_replica),
-															SD.length_num_nucs * sizeof(*(SD.num_nucs)),
-															HWLOC_OBJ_CORE,
-															HWLOC_DISTANCES_KIND_FROM_OS |
-															HWLOC_DISTANCES_KIND_MEANS_LATENCY);
-	nbytes += (SD.num_nucs_replica)->n * (SD.num_nucs_replica)->size;
-	aml_replicaset_init(SD.num_nucs_replica, SD.num_nucs);
+	if(mype == 0) printf("Intialization complete. Allocated %.0lf MB of data on CPU.\n", nbytes/1024.0/1024.0 );
 
-	// concs
-	aml_replicaset_hwloc_create(&(SD.concs_replica),
-															SD.length_concs * sizeof(*(SD.concs)),
-															HWLOC_OBJ_CORE,
-															HWLOC_DISTANCES_KIND_FROM_OS |
-															HWLOC_DISTANCES_KIND_MEANS_LATENCY);
-	nbytes += (SD.concs_replica)->n * (SD.concs_replica)->size;
-	aml_replicaset_init(SD.concs_replica, SD.concs);
-
-	// unionized_energy_array
-	if( in.grid_type == UNIONIZED ){
-		aml_replicaset_hwloc_create(&(SD.unionized_energy_array_replica),
-																SD.length_unionized_energy_array * sizeof(*(SD.unionized_energy_array)),
-																HWLOC_OBJ_CORE,
-																HWLOC_DISTANCES_KIND_FROM_OS |
-																HWLOC_DISTANCES_KIND_MEANS_LATENCY);
-		nbytes += (SD.unionized_energy_array_replica)->n * (SD.unionized_energy_array_replica)->size;
-		aml_replicaset_init(SD.unionized_energy_array_replica, SD.unionized_energy_array);
-	}
-
-	// index grid
-	if( in.grid_type == UNIONIZED || in.grid_type == HASH ){
-		aml_replicaset_hwloc_create(&(SD.index_grid_replica),
-																SD.length_index_grid * sizeof(*(SD.index_grid)),
-																HWLOC_OBJ_CORE,
-																HWLOC_DISTANCES_KIND_FROM_OS |
-																HWLOC_DISTANCES_KIND_MEANS_LATENCY);
-		nbytes += (SD.index_grid_replica)->n * (SD.index_grid_replica)->size;
-		aml_replicaset_init(SD.index_grid_replica, SD.index_grid);
-	}
-
-	// nuclide grid
-	aml_replicaset_hwloc_create(&(SD.nuclide_grid_replica),
-															SD.length_nuclide_grid * sizeof(*(SD.nuclide_grid)),
-															HWLOC_OBJ_CORE,
-															HWLOC_DISTANCES_KIND_FROM_OS |
-															HWLOC_DISTANCES_KIND_MEANS_LATENCY);
-	nbytes += (SD.nuclide_grid_replica)->n * (SD.nuclide_grid_replica)->size;
-	aml_replicaset_init(SD.nuclide_grid_replica, SD.nuclide_grid);
-#endif
-	
-	if(mype == 0) printf("Intialization complete. Allocated %.0lf MB of data.\n", nbytes/1024.0/1024.0 );
 	return SD;
 }

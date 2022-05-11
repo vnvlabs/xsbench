@@ -13,6 +13,7 @@ XSBench is a mini-app representing a key computational kernel of the Monte Carlo
 3. [Running XSBench / Command Line Interface](#Running-XSBench)
 4. [Feature Discussion](#Feature-Discussion)
 	* [MPI Support](#MPI-Support)
+	* [AML Optimizations](#AML-Optimizations)
 	* [Verification Support](#Verification-Support)
 	* [Binary File Support](#Binary-File-Support)
 5. [Theory & Algorithms](#Algorithms)
@@ -46,6 +47,9 @@ This version of XSBench is written in OpenCL, and can be used for CPU, GPU, FPGA
 4. **XSBench/sycl**
 This version of XSBench is written in SYCL, and can be used for CPU, GPU, FPGA, or other architectures that support OpenCL and SYCL. It was written with GPUs in mind, so if running on other architectures you may need to heavily re-optimize the code. You will also likely need to edit the makefile to supply the path to your SYCL compiler.
 
+5. **XSBench/hip**
+This version of XSBench is written in HIP for use with GPU architectures. This version is derived from CUDA using an automatic conversion tool with only a few small manual changes.
+
 ## Compilation
 
 To compile XSBench with default settings, navigate to your selected source directory and use the following command:
@@ -69,6 +73,7 @@ OPTIMIZE = yes
 DEBUG    = no
 PROFILE  = no
 MPI      = no
+AML      = no
 ```
 - Optimization enables the -O3 optimization flag.
 - Debugging enables the -g flag.
@@ -76,6 +81,7 @@ MPI      = no
 wish to significantly increase the number of lookups (with the -l
 flag) in order to wash out the initialization phase of the code.
 - MPI enables MPI support in the code.
+- AML enables AML optimizations. See [AML Optimizations](#AML-Optimizations).
 
 ## Running XSBench
 
@@ -133,6 +139,18 @@ For some of the XSBench code-bases (e.g., openmp-threading and cuda) there are s
 ### MPI Support
 
 While XSBench is primarily used to investigate "on node parallelism" issues, some systems provide power & performance statistics batched in multi-node configurations. To accommodate this, XSBench provides an MPI mode which runs the code on all MPI ranks simultaneously. There is no decomposition across ranks of any kind, and all ranks accomplish the same work. This is a "weak scaling" approach -- for instance, if running the event-based model all MPI ranks will execute 17,000,000 cross section lookups regardless of how many ranks are used. There is only one point of MPI communication (a reduce) at the end, which aggregates the timing statistics and averages them across MPI ranks before printing them out. MPI support can be enabled with the makefile flag "MPI". If you are not using the mpicc wrapper on your system, you may need to alter the makefile to make use of your desired compiler.
+
+### AML Optimizations
+
+AML is a memory management library featuring optimization abtractions. More information about the library can be found in the [online documentation](https://argo-aml.readthedocs.io/en/latest/). The library can be downloaded and installed from the [repository](https://xgitlab.cels.anl.gov/argo/aml).
+
+XSBench can be compiled to include these optimizations by toggling `make` `AML=yes` option. In order for `pkg-config` to find out the appropriate compilation flags, environment variable `PKG_CONFIG_PATH` must point to the install directory of `aml.pc`.
+
+Current optimizations featured in XSBench are as follow:
+- **replicaset**: Performance sensitive data structures are replicated on memories close to processing elements. If a group of processing elements have several close memories (e.g a NUMA cluster on Intel Knights Landing processor with has both a MCDRAM and DRAM memory modules) then the memory with the smallest latency is elected. Upon accessing sensitive data, the accessor location is looked up and the closest replica (latency wise) is accessed.
+
+Optimizations implementation and availability may depend on the programming model. In the current version the following programming models feature AML optimizations:
+- **openmp-threading**: replicaset.
 
 ### Verification Support
 
