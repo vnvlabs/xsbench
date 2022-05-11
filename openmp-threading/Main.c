@@ -6,6 +6,16 @@
 
 #include "VnV.h"
 
+/**
+ * @title XSBench Proxy Application  
+ * @shortTitle Hello there
+ * @description This is the XSBench Application
+ * @configuration {
+ * 	"hello" : "there"
+ * }
+ * 
+ * This is a comment
+ */
 INJECTION_EXECUTABLE(XSBENCH)
 
 static const char* schemaCallback = "{\"type\": \"object\", \"required\":[]}";

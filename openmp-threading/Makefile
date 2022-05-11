@@ -49,7 +49,6 @@ LDFLAGS = -lm -L${VNV_DIR}/lib -linjection -Wl,-rpath=${VNV_DIR}/lib
 
 # Regular gcc Compiler
 ifneq (,$(findstring gcc,$(CC)))
-  CFLAGS += -flto
   ifeq ($(OPENMP),yes)
 	CFLAGS += -fopenmp -DOPENMP
   endif
