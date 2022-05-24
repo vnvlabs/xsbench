@@ -22,7 +22,7 @@ RUN cd ${SOURCE_DIR}/xs-bench/openmp-threading \
 
 
 ENV VNV_CONFIG=${VNV_CONFIG}:${SOURCE_DIR}/xs-bench/vnv.__registration__
-
+ENV VNV_CONFIG=${VNV_CONFIG}:${SOURCE_DIR}/xs-bench/docker/config/vnv.__registration__
 
 
 
