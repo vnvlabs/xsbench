@@ -19,7 +19,7 @@
 INJECTION_EXECUTABLE(XSBENCH)
 
 static const char* schemaCallback = "{\"type\": \"object\", \"required\":[]}";
-INJECTION_OPTIONS(XSBENCH,schemaCallback){}
+INJECTION_OPTIONS(XSBENCH,schemaCallback,void){}
 
 int main( int argc, char* argv[] )
 {
