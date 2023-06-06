@@ -1,10 +1,6 @@
 ARG FROM_IMAGE=vnv_base
 FROM ${FROM_IMAGE}
 
-ARG COMMIT_HASH=unknown
-LABEL vnv.version.xsbench=${COMMIT_HASH}
-
-
 #Install xsbench
 COPY . ${SOURCE_DIR}/xs-bench
 
@@ -21,8 +17,9 @@ RUN cd ${SOURCE_DIR}/xs-bench/openmp-threading \
     && make 
 
 
-ENV VNV_CONFIG=${VNV_CONFIG}:${SOURCE_DIR}/xs-bench/openmp-threading/vnv.__registration__
-ENV VNV_CONFIG=${VNV_CONFIG}:${SOURCE_DIR}/xs-bench/vnv/gui/vnv.__registration__
+RUN echo ${SOURCE_DIR}/xs-bench/vnv/gui/vnv.__registration__  >> ${HOME}/.vnv
+
+
 
 
 
