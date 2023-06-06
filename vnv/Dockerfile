@@ -2,10 +2,10 @@ ARG FROM_IMAGE=vnv_base
 FROM ${FROM_IMAGE}
 
 #Install xsbench
-COPY . ${SOURCE_DIR}/xs-bench
+COPY . ${SOFTWARE_DIR}/xs-bench
 
 # Wrapper around bear that injects the openmp include directory.
-RUN cd ${SOURCE_DIR}/xs-bench/openmp-threading \
+RUN cd ${SOFTWARE_DIR}/xs-bench/openmp-threading \
     && bear make \
     && ${VNV_MATCHER} --package XSBENCH \
                       --output Registration_XSBENCH.c \
@@ -16,9 +16,7 @@ RUN cd ${SOURCE_DIR}/xs-bench/openmp-threading \
                       compile_commands.json\
     && make 
 
-
-RUN echo ${SOURCE_DIR}/xs-bench/vnv/gui/vnv.__registration__  >> ${HOME}/.vnv
-
+RUN python3 ${VNV_DIR}/scripts/register.py register ${SOFTWARE_DIR}/xs-bench/vnv/gui/vnv.__registration__ 
 
 
 
