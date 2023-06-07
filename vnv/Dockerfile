@@ -15,7 +15,7 @@ RUN cd ${SOFTWARE_DIR}/xs-bench/openmp-threading \
                       compile_commands.json\
     && make 
 
-ENV VNV_CONFIG=${VNV_CONFIG}:${SOFTWARE_DIR}/xs-bench/vnv/gui/vnv.__registration__ 
+RUN ${VNV_REGISTER} gui xs-bench ${SOFTWARE_DIR}/xs-bench/vnv/gui/vnv.__registration__ 
 
 
 
