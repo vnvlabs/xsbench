@@ -12,11 +12,10 @@ RUN cd ${SOFTWARE_DIR}/xs-bench/openmp-threading \
                       --fix-omp \
                       --cache vnv.__cache__ \
                       --targetFile ${PWD}/XSBench \
-                      --regFile vnv.__registration__ \
                       compile_commands.json\
     && make 
 
-RUN python3 ${VNV_DIR}/scripts/register.py register ${SOFTWARE_DIR}/xs-bench/vnv/gui/vnv.__registration__ 
+ENV VNV_CONFIG=${VNV_CONFIG}:${SOFTWARE_DIR}/xs-bench/vnv/gui/vnv.__registration__ 
 
 
 
