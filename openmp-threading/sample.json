@@ -1,6 +1,6 @@
 ﻿{
     "outputEngine": {
-	"json_file" : {
+	"file" : {
 	    "filename" : "vv-output"
 	}
     },
